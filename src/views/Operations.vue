@@ -18,7 +18,7 @@
                     class="form-control"
                     onkeydown="if (['Space'].includes(arguments[0].code)) return false;"
                     v-model="e"
-                  >
+                  >                                                                                                                                                                                   
                 </div>
                 <div class="col-md-11">
                   <button 
@@ -40,6 +40,13 @@
                   <template v-if="index != A.length - 1"> ; </template>
                 </template>
                 }
+              </div>
+              <div style="margin-top: 25px; text-align: center;">
+                <button class="btn btn-danger" 
+                  :disabled="A.length == 0"
+                  @click="clearSet()">
+                  <i class="bi bi-arrow-clockwise"></i> Limpiar
+                </button>
               </div>
             </section>
           </div>
@@ -73,14 +80,14 @@
       <div class="accordion-item">
         <h2 class="accordion-header">
           <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseThree" aria-expanded="false" aria-controls="flush-collapseThree">
-            3. Generamos una relación&nbsp;<i>A R A</i>
+            3. Generamos una relación&nbsp;<i>a R a</i>
           </button>
         </h2>
         <div id="flush-collapseThree" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
           <div class="accordion-body">
             <section>
-              <p>El sistema selecciona elementos aleatoriamente del producto cartesiano <i>AxA</i> para poder formar <i>A R A</i>. 
-                 Esto lo hace dinámicamente cada que el producto cartesiano cambie en el contenido del conjunto.
+              <p>El sistema selecciona elementos aleatoriamente del producto cartesiano <i>AxA</i> para poder formar <i>a R a</i>. 
+                 Esto lo hace dinámicamente cada que el producto cartesiano cambie en el contenido del conjunto o mediante el botón <i class="bi bi-arrow-clockwise"></i><b> Refrescar</b>.
               </p>
             </section>
 
@@ -103,15 +110,97 @@
           </div>
         </div>
       </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseFour" aria-expanded="false" aria-controls="flush-collapseFour">
+            4. Clasificación de la relación &nbsp;<i>a R a</i>
+          </button>
+        </h2>
+        <div id="flush-collapseFour" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+          <div class="accordion-body">
+            <section>
+              <p>El sistema construye la matriz booleana M<sub>R</sub> y  clasifica a la relación en sus propiedades.</p>
+            </section>
+
+            <div class="row">
+              <div class="col-sm-6" style="margin-bottom: 20px; font-size: 27px; text-align: center;">
+                <span v-html="stringMatrix"></span>
+              </div>
+              <div class="col-sm-6">
+                <ul class="list-group">
+                  <li class="list-group-item" v-for="(m, index) in msg" :key="index"><i>{{ m }}</i></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseFive" aria-expanded="false" aria-controls="flush-collapseFive">
+            Conjunto cociente de &nbsp;<i>A / R</i>
+          </button>
+        </h2>
+        <div id="flush-collapseFive" class="accordion-collapse collapse" data-bs-parent="#accordionFlushExample">
+          <div class="accordion-body">
+            <section>
+              <p>El sistema construye las clases de equivalencia del conjunto <i>A</i> dada por la relación <i>R</i>. Luego, selecciona cada clase de equivalencia 
+                y filtra a los conjuntos que no se repiten para acoplarlos en un último conjunto denominado <b>conjunto cociente.</b></p>
+            </section>
+
+            <section>
+              Si tenemos la siguiente relación <i>R</i>:
+              <div style="margin-top: 20px; margin-bottom: 15px; font-size: 20px; text-align: center;">
+                {
+                <template v-for="(element, index) in aRa" :key="index">
+                  ( <span class="badge bg-dark">{{ element[0] }} ; {{ element[1] }}</span> )
+                  <template v-if="index != aRa.length - 1"> ; </template>
+                </template>
+                }
+              </div>
+            </section>
+
+            Calculamos sus clases de equivalencia y el conjunto cociente:
+            
+            <div class="row" style="margin-top: 20px;">
+              <div class="col-sm-6" style="margin-bottom: 20px; font-size: 23px; text-align: center;">
+                <ul>
+                  <li class="list-group-item" v-for="(c, i) in eqClasses" :key="i">
+                    [{{ c.class }}] =
+                    <template v-if="c.set.length == 0">∅</template>
+                    <template v-else>
+                      {
+                      <template v-for="(s, j) in c.set" :key="j">
+                        {{ s }} <template v-if="c.set.length - 1 != j">, </template>
+                      </template>
+                      }
+                    </template>
+                  </li>
+                </ul>
+              </div>
+              <div class="col-sm-6">
+                
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
+import { matrix } from 'mathjs'; 
 import { 
   getRandom, 
   isReflexive, 
-  isIrreflexive 
+  isIrreflexive, 
+  isSymmetric,
+  isAsymmetric,
+  isAntiSymmetric,
+  isTransitive,
+  isEquivalence,
+  isPartialOrder
 } from '../assets/functions';
 
 export default {
@@ -124,6 +213,11 @@ export default {
       A: [],
       AxA: [],
       aRa: [],
+      msg: [],
+      eqClasses: [],
+      checkEquivalence: 0,
+      boolMatrix: matrix(),
+      stringMatrix: "",
       e: ''
     }
   },
@@ -175,18 +269,126 @@ export default {
       const dataSet = new Set(this.aRa);
       this.aRa = [...dataSet];
 
-      // this.classifyRelation();
+      this.drawMatrix();
+      this.buildQuotiend_Set();
+    },
+
+    buildQuotiend_Set() {
+      /* Generar las clases de equivalencia del conjunto A */
+      this.eqClasses = [];
+      let elementsClasses = [];
+      for (let i = 0; i < this.A.length; i++) {
+        for (let j = 0; j < this.aRa.length; j++) {
+          if (this.aRa[j][1] == this.A[i]) {
+            elementsClasses.push(this.aRa[j][0]);
+          }
+        }
+
+        const dataSet = new Set(elementsClasses);
+        const fixDataSet = [...dataSet];
+
+        this.eqClasses.push({
+          'class': this.A[i],
+          'set': fixDataSet 
+        });
+
+        elementsClasses = [];
+      }
+
+      console.log(this.eqClasses);
+    },
+
+    drawMatrix() {
+      let line = [], tmp = [];
+      let value = 0;
+      let str = "";
+
+      for (let i = 0; i < this.A.length; i++) {
+        for (let j = 0; j < this.A.length; j++) {
+          for(let k = 0; k < this.aRa.length; k++) {
+            if (this.A[i] == this.aRa[k][0] && this.A[j] == this.aRa[k][1]) {
+              value = 1; 
+              break;
+            }
+          }
+          
+          line.push(value);
+          if (value) value = 0;
+        }
+        
+        tmp.push(line);
+        line = [];
+      }
+
+      this.boolMatrix = matrix(tmp);
+
+      for (let i = 0; i < tmp.length; i++) {
+        str += "│&nbsp;&nbsp;&nbsp;";
+
+        for (let j = 0; j < tmp.length; j++) {
+          str += tmp[i][j] + "&nbsp;&nbsp;&nbsp;";
+        }
+
+        str += "│</br>"
+      }
+
+      this.stringMatrix = str;
+      this.classifyRelation();
     },
 
     classifyRelation() {
-      if (isReflexive(Atest, aRaTest)) this.msg = 'La relación es reflexiva.';
-      if (isIrreflexive(Atest, aRaTest)) this.msg = 'La relación es irreflexiva.';
+      this.checkEquivalence = 0;
+      let checkPartialOrder = 0;
+      this.msg = [
+        'La relación no es reflexiva.',
+        'La relación no es irreflexiva.',
+        'La relación no es simétrica.',
+        'La relación no es asimétrica.',
+        'La relación no es antisimétrica.',
+        'La relación no es transitiva.',
+        'La relación no es de equivalencia.',
+        'La relación no es de orden parcial.'
+      ];
+
+      if (isReflexive(this.boolMatrix)) {
+        this.msg[0] = 'La relación es reflexiva.';
+        this.checkEquivalence++;
+        checkPartialOrder++;
+      }
+
+      if (isIrreflexive(this.boolMatrix))
+        this.msg[1] = 'La relación es irreflexiva.';
+
+      if (isSymmetric(this.boolMatrix)) {
+        this.msg[2] = 'La relación es simétrica.';
+        this.checkEquivalence++;
+      }
+        
+      if (isAsymmetric(this.boolMatrix))
+        this.msg[3] = 'La relación es asimétrica.';
+
+      if (isAntiSymmetric(this.boolMatrix)) {
+        this.msg[4] = 'La relación es antisimétrica.';
+        checkPartialOrder++;
+      }
+
+      if (isTransitive(this.boolMatrix)) {
+        this.msg[5] = 'La relación es transitiva.';
+        this.checkEquivalence++;
+        checkPartialOrder++;
+      }
+
+      if (isEquivalence(this.checkEquivalence))
+        this.msg[6] = 'La relación es de equivalencia.';
+
+      if (isPartialOrder(checkPartialOrder))
+        this.msg[7] = 'La relación es de orden parcial.';
     },
 
     addManual() {
       if (this.A.length == 7) return;
 
-      /* Verificación para que el elemento no se repita */
+      /* Verificación para que el elemento en la caja no se repita */
       for (let i = 0; i < this.A.length; i++) {
         if (this.A[i] == this.e) return;
       }
@@ -211,12 +413,19 @@ export default {
       this.A = [];
 
       for (let i = 0; i < n; i++) {
-        if (getRandom(0, 1)) 
+        if (getRandom(0, 1))
           this.A.push(getRandom(0, 20));
         else 
           this.A.push(String.fromCharCode(getRandom(97, 122)));
       }
     },
+
+    clearSet() { 
+      this.A = [];
+      this.AxA = [];
+      this.aRa = [];
+      this.eqClasses = [];
+    }
   }
 }
 </script>
