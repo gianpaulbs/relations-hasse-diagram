@@ -1,4 +1,4 @@
-import { column, index, row, subset, transpose } from "mathjs";
+import { column, row, transpose } from "mathjs";
 
 /* Función que me permite calcular un número aleatorio entre 2 valores */
 function getRandom(min, max) {
